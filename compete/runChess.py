@@ -54,8 +54,6 @@ def runChess(game_nos,time_limits,MAX_TIME=300):
         
         change = 0
         g = 0
-        m = 0
-        n = 0
 
         # 动态引入模块
         ai_white = importlib.import_module('ais.'+game_nos[0]).ai
