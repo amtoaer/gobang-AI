@@ -26,3 +26,8 @@
     └── selfTest.py     # 测试单ai棋力
 ```
 
+## 截图
+
+使用`selfTest.py`测试`demo.py`：
+
+![截图录屏_tk_20200522122522](https://i.loli.net/2020/05/22/LMXQCVGSZrxdO38.png)
