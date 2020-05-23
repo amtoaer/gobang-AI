@@ -2,34 +2,45 @@
 from ais import demo
 import tkinter
 import tkinter.messagebox
+# window
 window = tkinter.Tk()
 window.title('五子棋')
+# label
 text = tkinter.StringVar()
 text.set('start!')
 label = tkinter.Label(window, textvariable=text)
+# canvas
 canvas = tkinter.Canvas(window)
 canvas.config(width=750, height=750)
 width = 50
 for i in range(15):
     for j in range(15):
         demo.list_all.append((i, j))
+lastStep = ()
 
 
-def draw(color, pos):
+def draw(blockColor,  pos, lineColor):
     canvas.create_rectangle(
-        pos[0]*width, pos[1]*width, (pos[0] + 1)*width, (pos[1] + 1)*width, fill=color, outline='blue')
+        pos[0]*width, pos[1]*width, (pos[0] + 1)*width, (pos[1] + 1)*width, fill=blockColor, outline=lineColor)
     canvas.update()
 
 
 def handleClick(event):
+    global lastStep
     tmp = (int(event.x / 50), int(event.y / 50))
-    if tmp not in demo.listAIAndHuman:
+    if tmp not in demo.listAI and tmp not in demo.listHuman:
         text.set('thinking')
         demo.listHuman.append(tmp)
-        draw('black', tmp)
+        draw('black', tmp, 'red')
+        if lastStep:
+            draw('white', lastStep, 'blue')
+        lastStep = tmp
         x, y = demo.ai(demo.listAI, demo.listHuman, demo.list_all)
         demo.listAI.append((x, y))
-        draw('white', (x, y))
+        draw('white', (x, y), 'red')
+        if lastStep:
+            draw('black', lastStep, 'blue')
+        lastStep = (x, y)
         text.set('it\'s your turn.')
         if demo.game_win(demo.listAI):
             tkinter.messagebox.showinfo('游戏结束', 'AI胜利')

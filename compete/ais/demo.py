@@ -11,7 +11,7 @@ COLUMN = 15
 ROW = 15
 # 决策树深度（此处为2，但2步预测棋力其实很低）
 DEPTH = 2
-# 不同情况的分数，用于评估局势
+# 不同情况的分数，用于评估局势（有较大缺陷）
 shape_score = [(50, (0, 1, 1, 0, 0)),
                (50, (0, 0, 1, 1, 0)),
                (200, (1, 1, 0, 1, 0)),
@@ -49,6 +49,7 @@ def ai(listAI, listHuman, list_all):
 
 
 def maxmin(is_ai, depth, alpha, beta, listAI, listHuman, listAIAndHuman, list_all):
+    global next_point
     """
     负值极大算法搜索 alpha + beta剪枝
     """
@@ -56,17 +57,14 @@ def maxmin(is_ai, depth, alpha, beta, listAI, listHuman, listAIAndHuman, list_al
     if game_win(listAI) or game_win(listHuman) or depth == 0:
         return evaluation(is_ai, listAI, listHuman)
 
-    # 返回在list_all中而不在listAIAndHuman中的点，即剩下的空点
-    blank_list = list(set(list_all).difference(set(listAIAndHuman)))
+    # 返回邻居点
+    blank_list = getBlankList(listAIAndHuman)
     # 进行排序，排序后blank_list内靠前的节点是最后一个棋子周围的空点
     order(blank_list, listAIAndHuman)
 
     # 遍历空点
-    for next_step in blank_list[0:225]:
-
-        # 如果要评估的位置没有相邻的子，则不去评估，减少计算
-        if not has_neightnor(next_step, listAIAndHuman):
-            continue
+    next_step = (0, 0)
+    for next_step in blank_list:
         # 将空点加入对应位置
         if is_ai:
             listAI.append(next_step)
@@ -81,18 +79,39 @@ def maxmin(is_ai, depth, alpha, beta, listAI, listHuman, listAIAndHuman, list_al
             listAI.remove(next_step)
         else:
             listHuman.remove(next_step)
-        listAIAndHuman.remove(next_step)
 
+        listAIAndHuman.remove(next_step)
         if value > alpha:
-            # 让下一步为理想的最好结果
             if depth == DEPTH:
-                next_point[0] = next_step[0]
-                next_point[1] = next_step[1]
-            # alpha + beta剪枝点
+                next_point = [next_step[0], next_step[1]]
             if value >= beta:
                 return beta
             alpha = value
     return alpha
+
+
+def getBlankList(listAIAndHuman):
+    result = set()
+    for node in listAIAndHuman:
+        result = result | getNeighbor(node)
+    return list(result-set(listAIAndHuman))
+
+
+def getNeighbor(node):
+    result = set()
+    for i in range(-1, 2):
+        for j in range(-1, 2):
+            x = node[0] + i
+            y = node[1]+j
+            if inBoard(x, y):
+                result.add((x, y))
+    return result
+
+
+def inBoard(x, y):
+    if x >= 0 and x < 15 and y >= 0 and y < 15:
+        return True
+    return False
 
 
 def order(blank_list, listAIAndHuman):
@@ -116,21 +135,6 @@ def order(blank_list, listAIAndHuman):
                 if (last_pt[0] + i, last_pt[1] + j) in blank_list:
                     blank_list.remove((last_pt[0] + i, last_pt[1] + j))
                     blank_list.insert(0, (last_pt[0] + i, last_pt[1] + j))
-
-
-def has_neightnor(pt, listAIAndHuman):
-    """
-    判断是否有邻居节点
-    :param pt: 待评测节点
-    :return: 是否有邻居节点(true/false)
-    """
-    for i in range(-1, 2):
-        for j in range(-1, 2):
-            if i == 0 and j == 0:
-                continue
-            if (pt[0] + i, pt[1] + j) in listAIAndHuman:
-                return True
-    return False
 
 
 def evaluation(is_ai, listAI, listHuman):
@@ -168,7 +172,7 @@ def evaluation(is_ai, listAI, listHuman):
         enemy_score += cal_score(m, n, -1, 1, my_list,
                                  enemy_list, score_all_arr_enemy)
 
-    total_score = my_score - enemy_score * 0.1
+    total_score = my_score - enemy_score * 1
     return total_score
 
 
@@ -210,6 +214,7 @@ def cal_score(m, n, x_decrict, y_derice, enemy_list, my_list, score_all_arr):
 
         for (score, shape) in shape_score:
             if tmp_shap5 == shape or tmp_shap6 == shape:
+                # 找到最高评分，将分数与各点坐标存储到max_score_shape中
                 if score > max_score_shape[0]:
                     max_score_shape = (score, ((m + (0 + offset) * x_decrict, n + (0 + offset) * y_derice),
                                                (m + (1 + offset) * x_decrict,
@@ -223,14 +228,19 @@ def cal_score(m, n, x_decrict, y_derice, enemy_list, my_list, score_all_arr):
 
     # 计算两个形状相交， 如两个3活 相交， 得分增加 一个子的除外
     if max_score_shape[1] is not None:
+        # 如果找到了得分形状
         for item in score_all_arr:
+            # 遍历所有点的最高分
             for pt1 in item[1]:
+                # 遍历所有点最高分数组中的所有点
                 for pt2 in max_score_shape[1]:
+                    # 遍历当前最高分数组中的所有点
                     if pt1 == pt2 and max_score_shape[0] > 10 and item[0] > 10:
+                        # 如果有相同点并且分数大于10（大于10是没用的约束条件），额外加双倍的分数
                         add_score += item[0] + max_score_shape[0]
 
         score_all_arr.append(max_score_shape)
-
+    # 返回额外加分与最高评分的和
     return add_score + max_score_shape[0]
 
 
