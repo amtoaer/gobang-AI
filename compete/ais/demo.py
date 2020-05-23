@@ -58,9 +58,9 @@ def maxmin(is_ai, depth, alpha, beta, listAI, listHuman, listAIAndHuman, list_al
         return evaluation(is_ai, listAI, listHuman)
 
     # 返回邻居点
-    blank_list = getBlankList(listAIAndHuman)
-    # 进行排序，排序后blank_list内靠前的节点是最后一个棋子周围的空点
-    order(blank_list, listAIAndHuman)
+    tmpList = getBlankList(listAIAndHuman)
+    # 进行排序，排序后blank_list内靠前的节点是分数较高的节点，这样排序后（应该）可以增加剪枝效率
+    blank_list = order(is_ai, tmpList, listAI, listHuman)
 
     # 遍历空点
     next_step = (0, 0)
@@ -91,6 +91,7 @@ def maxmin(is_ai, depth, alpha, beta, listAI, listHuman, listAIAndHuman, list_al
 
 
 def getBlankList(listAIAndHuman):
+    # 得到当前棋子周围的所有空点
     result = set()
     for node in listAIAndHuman:
         result = result | getNeighbor(node)
@@ -98,6 +99,7 @@ def getBlankList(listAIAndHuman):
 
 
 def getNeighbor(node):
+    # 得到单个棋子周围的所有空点
     result = set()
     for i in range(-1, 2):
         for j in range(-1, 2):
@@ -109,37 +111,33 @@ def getNeighbor(node):
 
 
 def inBoard(x, y):
+    # 判断(x,y)是否在棋盘上
     if x >= 0 and x < 15 and y >= 0 and y < 15:
         return True
     return False
 
 
-def order(blank_list, listAIAndHuman):
-    """
-    离最后落子的邻居位置最有可能是最优点
-    计算最后落子点的8个方向邻居节点
-    若未落子，则插入到blank列表的最前端
-    :param blank_list: 未落子节点集合
-    :return: blank_list
-    """
-    if len(listAIAndHuman) != 0:
-        # 得到最后一步棋子
-        last_pt = listAIAndHuman[-1]
-        # for item in blank_list:
-        for i in range(-1, 2):
-            for j in range(-1, 2):
-                # 如果是最后一步的棋子则继续循环
-                if i == 0 and j == 0:
-                    continue
-                # 判断周围八个点处是否没有棋子，把没有棋子的点放到blank_list的最前端
-                if (last_pt[0] + i, last_pt[1] + j) in blank_list:
-                    blank_list.remove((last_pt[0] + i, last_pt[1] + j))
-                    blank_list.insert(0, (last_pt[0] + i, last_pt[1] + j))
+def order(isAI, blankList, listAI, listHuman):
+    # 启发式搜索
+    tmp = dict()
+    if isAI:
+        myList, enemyList = listAI, listHuman
+    else:
+        myList, enemyList = listHuman, listAI
+    for node in blankList:
+        myScore = 0
+        # 对该点四个方向进行评估（复用了打分函数，不过可能需要修改，当前效率还很低）
+        myScore += cal_score(node[0], node[1], 0, 1, enemyList, myList, [])
+        myScore += cal_score(node[0], node[1], 1, 0, enemyList, myList, [])
+        myScore += cal_score(node[0], node[1], 1, 1, enemyList, myList, [])
+        myScore += cal_score(node[0], node[1], -1, 1, enemyList, myList, [])
+        tmp[node] = myScore
+    return [item[0] for item in sorted(tmp.items(), key=lambda item: item[1], reverse=True)]
 
 
 def evaluation(is_ai, listAI, listHuman):
     """
-    评估函数
+    评估函数（效率较低）
     """
     if is_ai:
         my_list = listAI
