@@ -11,22 +11,6 @@ COLUMN = 15
 ROW = 15
 # 决策树深度（此处为2，但2步预测棋力其实很低）
 DEPTH = 2
-# 不同情况的分数，用于评估局势（有较大缺陷）
-shape_score = [(50, (0, 1, 1, 0, 0)),
-               (50, (0, 0, 1, 1, 0)),
-               (200, (1, 1, 0, 1, 0)),
-               (500, (0, 0, 1, 1, 1)),
-               (500, (1, 1, 1, 0, 0)),
-               (5000, (0, 1, 1, 1, 0)),
-               (5000, (0, 1, 0, 1, 1, 0)),
-               (5000, (0, 1, 1, 0, 1, 0)),
-               (5000, (1, 1, 1, 0, 1)),
-               (5000, (1, 1, 0, 1, 1)),
-               (5000, (1, 0, 1, 1, 1)),
-               (5000, (1, 1, 1, 1, 0)),
-               (5000, (0, 1, 1, 1, 1)),
-               (50000, (0, 1, 1, 1, 1, 0)),
-               (99999999, (1, 1, 1, 1, 1))]
 
 
 def ai(listAI, listHuman, list_all):
@@ -125,19 +109,15 @@ def order(isAI, blankList, listAI, listHuman):
     else:
         myList, enemyList = listHuman, listAI
     for node in blankList:
-        myScore = 0
-        # 对该点四个方向进行评估（复用了打分函数，不过可能需要修改，当前效率还很低）
-        myScore += cal_score(node[0], node[1], 0, 1, enemyList, myList, [])
-        myScore += cal_score(node[0], node[1], 1, 0, enemyList, myList, [])
-        myScore += cal_score(node[0], node[1], 1, 1, enemyList, myList, [])
-        myScore += cal_score(node[0], node[1], -1, 1, enemyList, myList, [])
+        # 对该点四个方向进行评估，并按照分数大小排序
+        myScore = getNodeScore(node[0], node[1], myList, enemyList)
         tmp[node] = myScore
     return [item[0] for item in sorted(tmp.items(), key=lambda item: item[1], reverse=True)]
 
 
 def evaluation(is_ai, listAI, listHuman):
     """
-    评估函数（效率较低）
+    评估函数
     """
     if is_ai:
         my_list = listAI
@@ -145,101 +125,182 @@ def evaluation(is_ai, listAI, listHuman):
     else:
         my_list = listHuman
         enemy_list = listAI
-    # score_all_arr的格式[(score,shape)]
-    score_all_arr = []  # 得分形状的位置 用于计算如果有相交 得分翻倍
-    my_score = 0
-    for pt in my_list:
-        m = pt[0]
-        n = pt[1]
-        my_score += cal_score(m, n, 0, 1, enemy_list, my_list, score_all_arr)
-        my_score += cal_score(m, n, 1, 0, enemy_list, my_list, score_all_arr)
-        my_score += cal_score(m, n, 1, 1, enemy_list, my_list, score_all_arr)
-        my_score += cal_score(m, n, -1, 1, enemy_list, my_list, score_all_arr)
-    # 算敌人的得分， 并减去
-    score_all_arr_enemy = []
-    enemy_score = 0
-    for pt in enemy_list:
-        m = pt[0]
-        n = pt[1]
-        enemy_score += cal_score(m, n, 0, 1, my_list,
-                                 enemy_list, score_all_arr_enemy)
-        enemy_score += cal_score(m, n, 1, 0, my_list,
-                                 enemy_list, score_all_arr_enemy)
-        enemy_score += cal_score(m, n, 1, 1, my_list,
-                                 enemy_list, score_all_arr_enemy)
-        enemy_score += cal_score(m, n, -1, 1, my_list,
-                                 enemy_list, score_all_arr_enemy)
-
-    total_score = my_score - enemy_score * 1
-    return total_score
+    myDoneList = dict().fromkeys(my_list, [0, 0, 0, 0])
+    enemyDoneList = dict().fromkeys(enemy_list, [0, 0, 0, 0])
+    directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
+    myScore = enemyScore = 0
+    for node in my_list:
+        for index in range(len(directions)):
+            myScore += getLineScore(False, node[0], node[1],
+                                    directions[index], index, my_list, enemy_list, myDoneList)
+    for node in enemy_list:
+        for index in range(len(directions)):
+            enemyScore += getLineScore(False, node[0], node[1],
+                                       directions[index], index, enemy_list, my_list, enemyDoneList)
+    return myScore-enemyScore*2
 
 
-def cal_score(m, n, x_decrict, y_derice, enemy_list, my_list, score_all_arr):
-    """
-    每个方向上的分值计算
-    :param m:
-    :param n:
-    :param x_decrict:
-    :param y_derice:
-    :param enemy_list:
-    :param my_list:
-    :param score_all_arr:
-    :return:
-    """
-    add_score = 0  # 加分项
-    # 在一个方向上， 只取最大的得分项
-    max_score_shape = (0, None)
+def getNodeScore(x, y, myList, enemyList):
+    directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
+    score = 0
+    # 对于单点计算来说，最后一个参数是不需要的，随便写一个[]
+    for index in range(len(directions)):
+        score += getLineScore(True, x, y,
+                              directions[index], index, myList, enemyList, [])
+    return score
 
-    # 如果此方向上，该点已经有得分形状，不重复计算
-    for item in score_all_arr:
-        for pt in item[1]:
-            if m == pt[0] and n == pt[1] and x_decrict == item[2][0] and y_derice == item[2][1]:
-                return 0
 
-    # 在落子点 左右方向上循环查找得分形状
-    for offset in range(-5, 1):
-        # offset = -2
-        pos = []
-        for i in range(0, 6):
-            if (m + (i + offset) * x_decrict, n + (i + offset) * y_derice) in enemy_list:
-                pos.append(2)
-            elif (m + (i + offset) * x_decrict, n + (i + offset) * y_derice) in my_list:
-                pos.append(1)
-            else:
-                pos.append(0)
-        tmp_shap5 = (pos[0], pos[1], pos[2], pos[3], pos[4])
-        tmp_shap6 = (pos[0], pos[1], pos[2], pos[3], pos[4], pos[5])
+def getLine(x, y, direction, myList, enemyList):
+    line = [0 for i in range(9)]
+    tmpX = x + (-5 * direction[0])
+    tmpY = y + (-5 * direction[1])
+    # 0为空棋子，1为我方棋子，2为敌方棋子
+    for i in range(9):
+        tmpX += direction[0]
+        tmpY += direction[1]
+        if (tmpX, tmpY) in myList:
+            line[i] = 1
+        elif (not inBoard(tmpX, tmpY)) or (tmpX, tmpY) in enemyList:
+            line[i] = 2
+    return line
 
-        for (score, shape) in shape_score:
-            if tmp_shap5 == shape or tmp_shap6 == shape:
-                # 找到最高评分，将分数与各点坐标存储到max_score_shape中
-                if score > max_score_shape[0]:
-                    max_score_shape = (score, ((m + (0 + offset) * x_decrict, n + (0 + offset) * y_derice),
-                                               (m + (1 + offset) * x_decrict,
-                                                n + (1 + offset) * y_derice),
-                                               (m + (2 + offset) * x_decrict,
-                                                n + (2 + offset) * y_derice),
-                                               (m + (3 + offset) * x_decrict,
-                                                n + (3 + offset) * y_derice),
-                                               (m + (4 + offset) * x_decrict, n + (4 + offset) * y_derice)),
-                                       (x_decrict, y_derice))
 
-    # 计算两个形状相交， 如两个3活 相交， 得分增加 一个子的除外
-    if max_score_shape[1] is not None:
-        # 如果找到了得分形状
-        for item in score_all_arr:
-            # 遍历所有点的最高分
-            for pt1 in item[1]:
-                # 遍历所有点最高分数组中的所有点
-                for pt2 in max_score_shape[1]:
-                    # 遍历当前最高分数组中的所有点
-                    if pt1 == pt2 and max_score_shape[0] > 10 and item[0] > 10:
-                        # 如果有相同点并且分数大于10（大于10是没用的约束条件），额外加双倍的分数
-                        add_score += item[0] + max_score_shape[0]
+def markDone(x, y, direction, directionIndex, left, right, myList, doneList):
+    tmpX = x + (-5 + left) * direction[0]
+    tmpY = x + (-5 + left) * direction[1]
+    for _ in range(left, right + 1):
+        tmpX += direction[0]
+        tmpY += direction[1]
+        if (tmpX, tmpY) in myList:
+            doneList[(tmpX, tmpY)][directionIndex] = 1
 
-        score_all_arr.append(max_score_shape)
-    # 返回额外加分与最高评分的和
-    return add_score + max_score_shape[0]
+
+def getLineScore(isSingle, x, y, direction, directionIndex, myList, enemyList, doneList):
+    # 防止重复计算
+    if not isSingle and doneList[(x, y)][directionIndex] == 1:
+        return 0
+    # 重构的单点得分函数
+    line = getLine(x, y, direction, myList, enemyList)
+    leftIndex, rightIndex = 4, 4
+    # 判断同种棋子连续的长度
+    while rightIndex < 8:
+        if line[rightIndex + 1] != 1:
+            break
+        rightIndex += 1
+    while leftIndex > 0:
+        if line[leftIndex - 1] != 1:
+            break
+        leftIndex -= 1
+    leftRange, rightRange = leftIndex, rightIndex
+    # 延伸到遇到敌方棋子
+    while rightRange < 8:
+        if line[rightRange + 1] == 2:
+            break
+        rightRange += 1
+    while leftRange > 0:
+        if line[leftRange - 1] == 2:
+            break
+        leftRange -= 1
+    chessRange = rightRange - leftRange + 1
+    # 标记这些连续的我方棋子，表示已经统计过
+    if not isSingle:
+        markDone(x, y, direction, directionIndex,
+                 leftRange, rightRange, myList, doneList)
+    # 形不成棋型（举例：201112，是完全没有意义的棋）
+    if chessRange < 5:
+        return 0
+    myRange = rightIndex - leftIndex + 1
+    count = dict.fromkeys(
+        ['two', 'stwo', 'three', 'sthree', 'four', 'sfour', 'five'], 0)
+    # 连成五子，胜利
+    if myRange == 5:
+        count['five'] += 1
+    elif myRange == 4:
+        # 判断range左右的情况
+        left = line[leftIndex - 1]
+        right = line[rightIndex + 1]
+        # 左右均空，为活4
+        if not (left or right):
+            count['four'] += 1
+        # 一边空，为冲4
+        elif not (left and right):
+            count['sfour'] += 1
+    elif myRange == 3:
+        flag = False
+        # 冲4
+        if line[leftIndex - 1] == 0 and line[leftIndex - 2] == 1:
+            count['sfour'] += 1
+            flag = True
+        if line[rightIndex + 1] == 0 and line[rightIndex + 2] == 1:
+            count['sfour'] += 1
+            flag = True
+        if not flag:
+            if not (line[leftIndex - 1] or line[rightIndex + 1]):
+                if chessRange > 5:
+                    count['three'] += 1
+                else:
+                    count['sthree'] += 1
+            elif not (line[leftIndex - 1] and line[rightIndex + 1]):
+                count['sthree'] += 1
+    elif myRange == 2:
+        leftFlag, rightFlag = False, False
+        leftEmpty, rightEmpty = False, False
+        if line[leftIndex - 1] == 0:
+            if line[leftIndex - 2] == 1:
+                if line[leftIndex - 3] == 0:
+                    leftFlag = True
+                    if line[rightIndex + 1] == 0:
+                        count['three'] += 1
+                    else:
+                        count['sthree'] += 1
+                elif line[leftIndex - 3] == 2:
+                    if line[rightIndex + 1] == 0:
+                        count['sthree'] += 1
+                        leftFlag = True
+            leftEmpty = True
+
+        if line[rightIndex + 1] == 0:
+            if line[rightIndex + 2] == 1:
+                if line[rightIndex + 3] == 1:
+                    count['sfour'] += 1
+                    rightFlag = True
+                elif line[rightIndex + 3] == 0:
+                    if leftEmpty:
+                        count['three'] += 1
+                    else:
+                        count['sthree'] += 1
+                    rightFlag = True
+                elif leftEmpty:
+                    count['sthree'] += 1
+                    rightFlag = True
+            rightEmpty = True
+        if leftFlag or rightFlag:
+            pass
+        elif leftEmpty and rightEmpty:
+            count['two'] += 1
+        elif leftEmpty or rightEmpty:
+            count['stwo'] += 1
+    elif myRange == 1:
+        leftEmpty = rightEmpty = False
+        if line[leftIndex - 1] == 0:
+            if line[leftIndex - 2] == 1:
+                if line[leftIndex - 3] == 0 and line[rightIndex + 1] == 2:
+                    count['stwo'] += 1
+            leftEmpty = True
+        if line[rightIndex + 1] == 0:
+            if line[rightIndex + 2] == 1:
+                if line[rightIndex + 3] == 0:
+                    if leftEmpty:
+                        count['two'] += 1
+                    else:
+                        count['stwo'] += 1
+            elif line[rightIndex + 2] == '0':
+                if line[rightIndex + 3] == 1 and line[rightIndex + 4] == 0:
+                    count['two'] += 1
+    score = count['five']*20000+count['four']*15000+count['sfour']*5000 + \
+        count['three']*4000+count['sthree']*2000 + \
+        count['two']*1000+count['stwo']*500
+    return score
 
 
 def game_win(list):
