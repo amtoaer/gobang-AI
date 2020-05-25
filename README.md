@@ -28,6 +28,9 @@
 
 ## 截图
 
-使用`selfTest.py`测试`demo.py`：
+使用`selfTest.py`测试`myAI.py`：
 
-![截图录屏_tk_20200522122522](https://i.loli.net/2020/05/22/LMXQCVGSZrxdO38.png)
+![](https://i.loli.net/2020/05/25/hlnwMeAbQBoz8SD.png)
+
+![](https://i.loli.net/2020/05/25/E3hnscOpbT8QztH.png)
+
