@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from ais import demo
+from ais import myAI
 import tkinter
 import tkinter.messagebox
 # window
@@ -15,7 +15,7 @@ canvas.config(width=750, height=750)
 width = 50
 for i in range(15):
     for j in range(15):
-        demo.list_all.append((i, j))
+        myAI.list_all.append((i, j))
 lastStep = ()
 
 
@@ -28,24 +28,24 @@ def draw(blockColor,  pos, lineColor):
 def handleClick(event):
     global lastStep
     tmp = (int(event.x / 50), int(event.y / 50))
-    if tmp not in demo.listAI and tmp not in demo.listHuman:
+    if tmp not in myAI.listAI and tmp not in myAI.listHuman:
         text.set('thinking')
-        demo.listHuman.append(tmp)
+        myAI.listHuman.append(tmp)
         draw('black', tmp, 'red')
         if lastStep:
             draw('white', lastStep, 'blue')
         lastStep = tmp
-        x, y = demo.ai(demo.listAI, demo.listHuman, demo.list_all)
-        demo.listAI.append((x, y))
+        x, y = myAI.ai(myAI.listAI, myAI.listHuman, myAI.list_all)
+        myAI.listAI.append((x, y))
         draw('white', (x, y), 'red')
         if lastStep:
             draw('black', lastStep, 'blue')
         lastStep = (x, y)
         text.set('it\'s your turn.')
-        if demo.game_win(demo.listAI):
+        if myAI.game_win(myAI.listAI):
             tkinter.messagebox.showinfo('游戏结束', 'AI胜利')
             exit(0)
-        elif demo.game_win(demo.listHuman):
+        elif myAI.game_win(myAI.listHuman):
             tkinter.messagebox.showinfo('游戏结束', '人类胜利')
             exit(0)
 
@@ -58,6 +58,11 @@ def main():
     canvas.pack()
     label.pack()
     canvas.focus_set()
+    imFirst = tkinter.messagebox.askokcancel('提示', '是否由您先手？')
+    if not imFirst:
+        x, y = myAI.ai(myAI.listAI, myAI.listHuman, myAI.list_all)
+        myAI.listAI.append((x, y))
+        draw('white', (x, y), 'red')
     canvas.bind('<Button-1>', handleClick)
     window.mainloop()
 

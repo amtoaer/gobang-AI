@@ -182,7 +182,7 @@ def getLineScore(x, y, direction, directionIndex, myList, enemyList):
     # 重构的单点得分函数
     line = getLine(x, y, direction, myList, enemyList)
     leftIndex, rightIndex = 4, 4
-    # 判断同种棋子连续的长度
+    # 判断我方棋子连续的长度
     while rightIndex < 8:
         if line[rightIndex + 1] != 1:
             break
@@ -192,7 +192,7 @@ def getLineScore(x, y, direction, directionIndex, myList, enemyList):
             break
         leftIndex -= 1
     leftRange, rightRange = leftIndex, rightIndex
-    # 延伸到遇到敌方棋子
+    # 延伸直到遇到敌方棋子
     while rightRange < 8:
         if line[rightRange + 1] == 2:
             break
@@ -208,32 +208,34 @@ def getLineScore(x, y, direction, directionIndex, myList, enemyList):
     myRange = rightIndex - leftIndex + 1
     count = dict.fromkeys(
         ['two', 'stwo', 'three', 'sthree', 'four', 'sfour', 'five'], 0)
-    # 连成五子，胜利
+    # 11111
     if myRange == 5:
         count['five'] += 1
     elif myRange == 4:
-        # 判断range左右的情况
         left = line[leftIndex - 1]
         right = line[rightIndex + 1]
-        # 左右均空，为活4
+        # 011110
         if not (left or right):
             count['four'] += 1
-        # 一边空，为冲4
+        # 011112|211110
         elif not (left and right):
             count['sfour'] += 1
     elif myRange == 3:
         flag = False
-        # 冲4
+        # 101112
         if line[leftIndex - 1] == 0 and line[leftIndex - 2] == 1:
             count['sfour'] += 1
             flag = True
+        # 111012
         if line[rightIndex + 1] == 0 and line[rightIndex + 2] == 1:
             count['sfour'] += 1
             flag = True
         if not flag:
             if not (line[leftIndex - 1] or line[rightIndex + 1]):
+                # 011100|001110
                 if chessRange > 5:
                     count['three'] += 1
+                # 2011102
                 else:
                     count['sthree'] += 1
             elif not (line[leftIndex - 1] and line[rightIndex + 1]):
@@ -246,11 +248,14 @@ def getLineScore(x, y, direction, directionIndex, myList, enemyList):
                 if line[leftIndex - 3] == 0:
                     leftFlag = True
                     if line[rightIndex + 1] == 0:
+                        # 010110
                         count['three'] += 1
                     else:
+                        # 010112
                         count['sthree'] += 1
                 elif line[leftIndex - 3] == 2:
                     if line[rightIndex + 1] == 0:
+                        # 210110
                         count['sthree'] += 1
                         leftFlag = True
             leftEmpty = True
@@ -258,41 +263,55 @@ def getLineScore(x, y, direction, directionIndex, myList, enemyList):
         if line[rightIndex + 1] == 0:
             if line[rightIndex + 2] == 1:
                 if line[rightIndex + 3] == 1:
+                    # 11011
                     count['sfour'] += 1
                     rightFlag = True
                 elif line[rightIndex + 3] == 0:
                     if leftEmpty:
+                        # 011010
                         count['three'] += 1
                     else:
+                        # 211010
                         count['sthree'] += 1
                     rightFlag = True
                 elif leftEmpty:
+                    # 011012
                     count['sthree'] += 1
                     rightFlag = True
             rightEmpty = True
         if leftFlag or rightFlag:
             pass
         elif leftEmpty and rightEmpty:
+            # 0110
             count['two'] += 1
         elif leftEmpty or rightEmpty:
+            # 2110|0112
             count['stwo'] += 1
     elif myRange == 1:
-        leftEmpty = rightEmpty = False
+        leftEmpty = False
         if line[leftIndex - 1] == 0:
             if line[leftIndex - 2] == 1:
                 if line[leftIndex - 3] == 0 and line[rightIndex + 1] == 2:
+                    # 01012
                     count['stwo'] += 1
             leftEmpty = True
         if line[rightIndex + 1] == 0:
             if line[rightIndex + 2] == 1:
                 if line[rightIndex + 3] == 0:
                     if leftEmpty:
+                        # 01010
                         count['two'] += 1
                     else:
+                        # 21010
                         count['stwo'] += 1
-            elif line[rightIndex + 2] == '0':
+            elif line[rightIndex + 2] == 0:
                 if line[rightIndex + 3] == 1 and line[rightIndex + 4] == 0:
-                    count['two'] += 1
+                    if leftEmpty:
+                        # 010010
+                        count['two'] += 1
+                    else:
+                        # 210010
+                        count['stwo'] += 1
     score = count['five']*100000+count['four']*10000+count['sfour']*1000 + \
         count['three']*1000+count['sthree']*100 + \
         count['two']*100+count['stwo']*10

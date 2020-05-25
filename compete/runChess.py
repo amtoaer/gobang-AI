@@ -128,6 +128,6 @@ def runChess(game_nos, time_limits, MAX_TIME=300):
 
 if __name__ == "__main__":
 
-    result = runChess(('demo', 'demo1'), 1000)
+    result = runChess(('myAI', 'oldDemo'), 1000)
 
     print(result)
