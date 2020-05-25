@@ -51,6 +51,7 @@ def handleClick(event):
 
 
 def main():
+    global lastStep
     for x in range(15):
         for y in range(15):
             canvas.create_rectangle(
@@ -62,6 +63,7 @@ def main():
     if not imFirst:
         x, y = myAI.ai(myAI.listAI, myAI.listHuman, myAI.list_all)
         myAI.listAI.append((x, y))
+        lastStep = (x, y)
         draw('white', (x, y), 'red')
     canvas.bind('<Button-1>', handleClick)
     window.mainloop()
