@@ -125,28 +125,29 @@ def evaluation(is_ai, listAI, listHuman):
     else:
         my_list = listHuman
         enemy_list = listAI
+    '''
     myDoneList = dict().fromkeys(my_list, [0, 0, 0, 0])
     enemyDoneList = dict().fromkeys(enemy_list, [0, 0, 0, 0])
+    '''
     directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
     myScore = enemyScore = 0
     for node in my_list:
         for index in range(len(directions)):
-            myScore += getLineScore(False, node[0], node[1],
-                                    directions[index], index, my_list, enemy_list, myDoneList)
+            myScore += getLineScore(node[0], node[1],
+                                    directions[index], index, my_list, enemy_list)
     for node in enemy_list:
         for index in range(len(directions)):
-            enemyScore += getLineScore(False, node[0], node[1],
-                                       directions[index], index, enemy_list, my_list, enemyDoneList)
+            enemyScore += getLineScore(node[0], node[1],
+                                       directions[index], index, enemy_list, my_list)
     return myScore-enemyScore*2
 
 
 def getNodeScore(x, y, myList, enemyList):
     directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
     score = 0
-    # 对于单点计算来说，最后一个参数是不需要的，随便写一个[]
     for index in range(len(directions)):
-        score += getLineScore(True, x, y,
-                              directions[index], index, myList, enemyList, [])
+        score += getLineScore(x, y,
+                              directions[index], index, myList, enemyList)
     return score
 
 
@@ -160,11 +161,12 @@ def getLine(x, y, direction, myList, enemyList):
         tmpY += direction[1]
         if (tmpX, tmpY) in myList:
             line[i] = 1
-        elif (not inBoard(tmpX, tmpY)) or (tmpX, tmpY) in enemyList:
+        elif (not inBoard(tmpX, tmpY)) or ((tmpX, tmpY) in enemyList):
             line[i] = 2
     return line
 
 
+'''
 def markDone(x, y, direction, directionIndex, left, right, myList, doneList):
     tmpX = x + (-5 + left) * direction[0]
     tmpY = x + (-5 + left) * direction[1]
@@ -173,12 +175,10 @@ def markDone(x, y, direction, directionIndex, left, right, myList, doneList):
         tmpY += direction[1]
         if (tmpX, tmpY) in myList:
             doneList[(tmpX, tmpY)][directionIndex] = 1
+'''
 
 
-def getLineScore(isSingle, x, y, direction, directionIndex, myList, enemyList, doneList):
-    # 防止重复计算
-    if not isSingle and doneList[(x, y)][directionIndex] == 1:
-        return 0
+def getLineScore(x, y, direction, directionIndex, myList, enemyList):
     # 重构的单点得分函数
     line = getLine(x, y, direction, myList, enemyList)
     leftIndex, rightIndex = 4, 4
@@ -202,10 +202,6 @@ def getLineScore(isSingle, x, y, direction, directionIndex, myList, enemyList, d
             break
         leftRange -= 1
     chessRange = rightRange - leftRange + 1
-    # 标记这些连续的我方棋子，表示已经统计过
-    if not isSingle:
-        markDone(x, y, direction, directionIndex,
-                 leftRange, rightRange, myList, doneList)
     # 形不成棋型（举例：201112，是完全没有意义的棋）
     if chessRange < 5:
         return 0
@@ -297,9 +293,9 @@ def getLineScore(isSingle, x, y, direction, directionIndex, myList, enemyList, d
             elif line[rightIndex + 2] == '0':
                 if line[rightIndex + 3] == 1 and line[rightIndex + 4] == 0:
                     count['two'] += 1
-    score = count['five']*20000+count['four']*15000+count['sfour']*5000 + \
-        count['three']*4000+count['sthree']*2000 + \
-        count['two']*1000+count['stwo']*500
+    score = count['five']*100000+count['four']*10000+count['sfour']*1000 + \
+        count['three']*1000+count['sthree']*100 + \
+        count['two']*100+count['stwo']*10
     return score
 
 
