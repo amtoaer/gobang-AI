@@ -72,13 +72,13 @@ def runChess(game_nos, time_limits, MAX_TIME=300):
         try:
             pos = blank_list[0]
             if change % 2 == 0:
-                pos = func_timeout(MAX_TIME, ai_white, args=(
+                pos = func_timeout(MAX_TIME, ai_white, (
                     list_white, list_black, list_all))
                 list_white.append(pos)
                 list_summary.append(pos)
             else:
-                pos = func_timeout(MAX_TIME, ai_black,
-                                   (list_black, list_white, list_all))
+                pos = func_timeout(MAX_TIME, ai_black, (
+                    list_black, list_white, list_all))
                 list_black.append(pos)
                 list_summary.append(pos)
             if pos not in blank_list:
@@ -128,6 +128,6 @@ def runChess(game_nos, time_limits, MAX_TIME=300):
 
 if __name__ == "__main__":
 
-    result = runChess(('myAI', 'oldDemo'), 1000)
+    result = runChess(('oldDemo', 'myAI'), 1000)
 
     print(result)

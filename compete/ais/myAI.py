@@ -11,6 +11,8 @@ COLUMN = 15
 ROW = 15
 # 决策树深度（此处为2，但2步预测棋力其实很低）
 DEPTH = 2
+# 防守系数，系数越高，ai下的越保守
+defend = 2
 
 
 def ai(listAI, listHuman, list_all):
@@ -22,13 +24,10 @@ def ai(listAI, listHuman, list_all):
         next_point[0] = 7
         next_point[1] = 7
     else:
-        # 将listAI与listHuman顺序加入到listAIAndHuman
-        for i in range(len(listAI)):
-            listAIAndHuman.append(listAI[i])
-        for i in range(len(listHuman)):
-            listAIAndHuman.append(listHuman[i])
-    maxmin(True, DEPTH, -99999999, 99999999, listAI,
-           listHuman, listAIAndHuman, list_all)
+        # 将listAI与listHuman加入到listAIAndHuman
+        listAIAndHuman = listAI+listHuman
+        maxmin(True, DEPTH, -99999999, 99999999, listAI,
+               listHuman, listAIAndHuman, list_all)
     return next_point[0], next_point[1]
 
 
@@ -96,7 +95,7 @@ def getNeighbor(node):
 
 def inBoard(x, y):
     # 判断(x,y)是否在棋盘上
-    if x >= 0 and x < 15 and y >= 0 and y < 15:
+    if x >= 0 and x < COLUMN and y >= 0 and y < ROW:
         return True
     return False
 
@@ -125,29 +124,20 @@ def evaluation(is_ai, listAI, listHuman):
     else:
         my_list = listHuman
         enemy_list = listAI
-    '''
-    myDoneList = dict().fromkeys(my_list, [0, 0, 0, 0])
-    enemyDoneList = dict().fromkeys(enemy_list, [0, 0, 0, 0])
-    '''
-    directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
     myScore = enemyScore = 0
     for node in my_list:
-        for index in range(len(directions)):
-            myScore += getLineScore(node[0], node[1],
-                                    directions[index], index, my_list, enemy_list)
+        myScore += getNodeScore(node[0], node[1], my_list, enemy_list)
     for node in enemy_list:
-        for index in range(len(directions)):
-            enemyScore += getLineScore(node[0], node[1],
-                                       directions[index], index, enemy_list, my_list)
-    return myScore-enemyScore*2
+        enemyScore += getNodeScore(node[0], node[1], enemy_list, my_list)
+    return myScore - enemyScore * defend
 
 
 def getNodeScore(x, y, myList, enemyList):
     directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
     score = 0
-    for index in range(len(directions)):
+    for direction in directions:
         score += getLineScore(x, y,
-                              directions[index], index, myList, enemyList)
+                              direction,  myList, enemyList)
     return score
 
 
@@ -166,19 +156,7 @@ def getLine(x, y, direction, myList, enemyList):
     return line
 
 
-'''
-def markDone(x, y, direction, directionIndex, left, right, myList, doneList):
-    tmpX = x + (-5 + left) * direction[0]
-    tmpY = x + (-5 + left) * direction[1]
-    for _ in range(left, right + 1):
-        tmpX += direction[0]
-        tmpY += direction[1]
-        if (tmpX, tmpY) in myList:
-            doneList[(tmpX, tmpY)][directionIndex] = 1
-'''
-
-
-def getLineScore(x, y, direction, directionIndex, myList, enemyList):
+def getLineScore(x, y, direction, myList, enemyList):
     # 重构的单点得分函数
     line = getLine(x, y, direction, myList, enemyList)
     leftIndex, rightIndex = 4, 4
