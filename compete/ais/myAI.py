@@ -95,7 +95,7 @@ def getNeighbor(node):
 
 def inBoard(x, y):
     # 判断(x,y)是否在棋盘上
-    if x >= 0 and x < COLUMN and y >= 0 and y < ROW:
+    if x >= 0 and x <= COLUMN and y >= 0 and y <= ROW:
         return True
     return False
 
@@ -303,19 +303,19 @@ def game_win(list):
     for m in range(COLUMN):
         for n in range(ROW):
             # 一列
-            if n < ROW - 4 and (m, n) in list and (m, n + 1) in list and (m, n + 2) in list and (
+            if n <= ROW - 4 and (m, n) in list and (m, n + 1) in list and (m, n + 2) in list and (
                     m, n + 3) in list and (m, n + 4) in list:
                 return True
             # 一行
-            elif m < ROW - 4 and (m, n) in list and (m + 1, n) in list and (m + 2, n) in list and (
+            elif m <= ROW - 4 and (m, n) in list and (m + 1, n) in list and (m + 2, n) in list and (
                     m + 3, n) in list and (m + 4, n) in list:
                 return True
             # 左上右下
-            elif m < ROW - 4 and n < ROW - 4 and (m, n) in list and (m + 1, n + 1) in list and (
+            elif m <= ROW - 4 and n < ROW - 4 and (m, n) in list and (m + 1, n + 1) in list and (
                     m + 2, n + 2) in list and (m + 3, n + 3) in list and (m + 4, n + 4) in list:
                 return True
             # 左下右上
-            elif m < ROW - 4 and n > 3 and (m, n) in list and (m + 1, n - 1) in list and (
+            elif m <= ROW - 4 and n > 3 and (m, n) in list and (m + 1, n - 1) in list and (
                     m + 2, n - 2) in list and (m + 3, n - 3) in list and (m + 4, n - 4) in list:
                 return True
     return False

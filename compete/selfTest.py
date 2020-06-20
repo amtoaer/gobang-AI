@@ -11,10 +11,10 @@ text.set('start!')
 label = tkinter.Label(window, textvariable=text)
 # canvas
 canvas = tkinter.Canvas(window)
-canvas.config(width=750, height=750)
+canvas.config(width=800, height=800)
 width = 50
-for i in range(15):
-    for j in range(15):
+for i in range(16):
+    for j in range(16):
         myAI.list_all.append((i, j))
 lastStep = ()
 
@@ -52,8 +52,8 @@ def handleClick(event):
 
 def main():
     global lastStep
-    for x in range(15):
-        for y in range(15):
+    for x in range(16):
+        for y in range(16):
             canvas.create_rectangle(
                 x*width, y*width, (x + 1)*width, (y + 1)*width, fill="orange", outline='black')
     canvas.pack()
